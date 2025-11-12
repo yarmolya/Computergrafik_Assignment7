@@ -54,33 +54,33 @@ mat4 ShadowViewer::m_constructLightViewMatrix(size_t li, size_t cube_face) const
     switch(cube_face) {
     case 0: // +X face
         direction = vec3(1.0f, 0.0f, 0.0f);
-        up = vec3(0.0f, -1.0f, 0.0f);
+        up = vec3(0.0f, 1.0f, 0.0f);  // Changed from -1 to +1
         break;
     case 1: // -X face
         direction = vec3(-1.0f, 0.0f, 0.0f);
-        up = vec3(0.0f, -1.0f, 0.0f);
+        up = vec3(0.0f, 1.0f, 0.0f);  // Changed from -1 to +1
         break;
     case 2: // +Y face
         direction = vec3(0.0f, 1.0f, 0.0f);
-        up = vec3(0.0f, 0.0f, 1.0f);
+        up = vec3(0.0f, 0.0f, -1.0f);  // Changed from +1 to -1
         break;
     case 3: // -Y face
         direction = vec3(0.0f, -1.0f, 0.0f);
-        up = vec3(0.0f, 0.0f, -1.0f);
+        up = vec3(0.0f, 0.0f, 1.0f);  // Changed from -1 to +1
         break;
     case 4: // +Z face
         direction = vec3(0.0f, 0.0f, 1.0f);
-        up = vec3(0.0f, -1.0f, 0.0f);
+        up = vec3(0.0f, 1.0f, 0.0f);  // Changed from -1 to +1
         break;
     case 5: // -Z face
         direction = vec3(0.0f, 0.0f, -1.0f);
-        up = vec3(0.0f, -1.0f, 0.0f);
+        up = vec3(0.0f, 1.0f, 0.0f);  // Changed from -1 to +1
         break;
     }
 
     // center is light position + direction
     vec3 center = light_pos_eye + direction;
-    
+
     mat4 look_eye = mat4::look_at(light_pos_eye, center, up);
     return look_eye * scene_view_matrix;
 }
@@ -139,7 +139,7 @@ void ShadowViewer::draw(const mat4 &view_matrix, const mat4 &projection_matrix) 
 
     glEnable(GL_DEPTH_TEST);
     glDepthFunc(GL_LEQUAL); // We need to re-draw the front-most fragments multiple times
-                            // (we cannot use the default setting of GL_LESS)
+    // (we cannot use the default setting of GL_LESS)
     glEnable(GL_TEXTURE_CUBE_MAP_SEAMLESS);
 
     /////////////////////////////////////
@@ -162,15 +162,15 @@ void ShadowViewer::draw(const mat4 &view_matrix, const mat4 &projection_matrix) 
     vec3 ambient_light(0.2, 0.2, 0.2),
         plane_diffuse (0.5, 0.5, 0.7), // used as ambient color too
         plane_specular(0.0, 0.0, 0.0),
-         mesh_diffuse (1.0, 0.0, 0.0), // used as ambient color too
-         mesh_specular(1.0, 1.0, 1.0);
+        mesh_diffuse (1.0, 0.0, 0.0), // used as ambient color too
+        mesh_specular(1.0, 1.0, 1.0);
 
     // Render the ambient light contribution
     m_solid_color_shader.use();
     m_solid_color_shader.set_uniform("color", ambient_light * plane_diffuse);
     m_solid_color_shader.set_uniform("modelview_projection_matrix", plane_mvp_matrix);
     m_quad.draw();
-    
+
     m_solid_color_shader.use();
     m_solid_color_shader.set_uniform("color", ambient_light * mesh_diffuse);
     m_solid_color_shader.set_uniform("modelview_projection_matrix", mesh_mvp_matrix);
@@ -215,7 +215,7 @@ void ShadowViewer::draw(const mat4 &view_matrix, const mat4 &projection_matrix) 
         m_phong_shader.set_uniform("light_color", m_light[li].color);
         m_phong_shader.set_uniform("specular_color", plane_specular);
         m_phong_shader.set_uniform("diffuse_color", plane_diffuse);
-        
+
         m_quad.draw();
 
         //render m_mesh
@@ -298,90 +298,90 @@ void ShadowViewer::paint() {
 void ShadowViewer::keyboard(int key, int /*scancode*/, int action, int mods) {
     if (action == GLFW_PRESS || action == GLFW_REPEAT) {
         switch(key) {
-            case GLFW_KEY_Q:
-            case GLFW_KEY_ESCAPE:
-                glfwSetWindowShouldClose(window_, GL_TRUE);
-                break;
-            // View controls
-            case GLFW_KEY_9:
-                m_viewParameters.dist_factor = std::min(m_viewParameters.dist_factor + 0.1f,20.0f);
-                break;
-            case GLFW_KEY_8:
-                m_viewParameters.dist_factor = std::max(m_viewParameters.dist_factor - 0.1f,2.5f);
-                break;
-            case GLFW_KEY_LEFT:
-                m_viewParameters.y_angle -= 10.0;
-                break;
-            case GLFW_KEY_RIGHT:
-                m_viewParameters.y_angle += 10.0;
-                break;
-            case GLFW_KEY_DOWN:
-                m_viewParameters.x_angle += 10.0;
-                break;
-            case GLFW_KEY_UP:
-                m_viewParameters.x_angle -= 10.0;
-                break;
-            case GLFW_KEY_F:
-                {
-                    size_t direction = (mods & GLFW_MOD_SHIFT) ? 6 /* mod(-1, 7) */ : 1;
-                    m_viewLightCubeFace = (m_viewLightCubeFace + direction) % 7;
-                    break;
-                }
-            case GLFW_KEY_C:
-                {
-                    m_cubeMapVisualizationMode = (m_cubeMapVisualizationMode + 1) % 3;
-                    break;
-                }
+        case GLFW_KEY_Q:
+        case GLFW_KEY_ESCAPE:
+            glfwSetWindowShouldClose(window_, GL_TRUE);
+            break;
+        // View controls
+        case GLFW_KEY_9:
+            m_viewParameters.dist_factor = std::min(m_viewParameters.dist_factor + 0.1f,20.0f);
+            break;
+        case GLFW_KEY_8:
+            m_viewParameters.dist_factor = std::max(m_viewParameters.dist_factor - 0.1f,2.5f);
+            break;
+        case GLFW_KEY_LEFT:
+            m_viewParameters.y_angle -= 10.0;
+            break;
+        case GLFW_KEY_RIGHT:
+            m_viewParameters.y_angle += 10.0;
+            break;
+        case GLFW_KEY_DOWN:
+            m_viewParameters.x_angle += 10.0;
+            break;
+        case GLFW_KEY_UP:
+            m_viewParameters.x_angle -= 10.0;
+            break;
+        case GLFW_KEY_F:
+        {
+            size_t direction = (mods & GLFW_MOD_SHIFT) ? 6 /* mod(-1, 7) */ : 1;
+            m_viewLightCubeFace = (m_viewLightCubeFace + direction) % 7;
+            break;
+        }
+        case GLFW_KEY_C:
+        {
+            m_cubeMapVisualizationMode = (m_cubeMapVisualizationMode + 1) % 3;
+            break;
+        }
 
-            case GLFW_KEY_PERIOD:
-                displayConfiguration();
-                break;
+        case GLFW_KEY_PERIOD:
+            displayConfiguration();
+            break;
 
-            case GLFW_KEY_1:
-            case GLFW_KEY_2:
-            case GLFW_KEY_3:
-                loadConfiguration(key - GLFW_KEY_1);
-                break;
+        case GLFW_KEY_1:
+        case GLFW_KEY_2:
+        case GLFW_KEY_3:
+            loadConfiguration(key - GLFW_KEY_1);
+            break;
 
-            // Light management
-            case GLFW_KEY_MINUS: // Remove a light from the scene
-                m_numActiveLights = std::max(0, m_numActiveLights - 1);
-                if (m_numActiveLights > 0)
-                    m_selectedLight = std::min(m_numActiveLights - 1, m_selectedLight);
-                break;
-            case GLFW_KEY_EQUAL: // Add a light to the scene
-                m_numActiveLights = std::min(int(MAX_LIGHTS), m_numActiveLights + 1);
-                m_selectedLight   = m_numActiveLights - 1;
-                break;
-            case GLFW_KEY_TAB: // Select the next active light for keyboard control
-                if (m_numActiveLights > 0)
-                    m_selectedLight = (m_selectedLight + 1) % m_numActiveLights;
-                break;
+        // Light management
+        case GLFW_KEY_MINUS: // Remove a light from the scene
+            m_numActiveLights = std::max(0, m_numActiveLights - 1);
+            if (m_numActiveLights > 0)
+                m_selectedLight = std::min(m_numActiveLights - 1, m_selectedLight);
+            break;
+        case GLFW_KEY_EQUAL: // Add a light to the scene
+            m_numActiveLights = std::min(int(MAX_LIGHTS), m_numActiveLights + 1);
+            m_selectedLight   = m_numActiveLights - 1;
+            break;
+        case GLFW_KEY_TAB: // Select the next active light for keyboard control
+            if (m_numActiveLights > 0)
+                m_selectedLight = (m_selectedLight + 1) % m_numActiveLights;
+            break;
 
-            // Light controls
-            case GLFW_KEY_W: // Light up
-                m_light[m_selectedLight].x_angle += 10.0;
-                break;
-            case GLFW_KEY_S: // Light down
-                m_light[m_selectedLight].x_angle -= 10.0;
-                break;
-            case GLFW_KEY_A: // Light clockwse
-                m_light[m_selectedLight].y_angle -= 10.0;
-                break;
-            case GLFW_KEY_D: // Light counterclockwise
-                m_light[m_selectedLight].y_angle += 10.0;
-                break;
+        // Light controls
+        case GLFW_KEY_W: // Light up
+            m_light[m_selectedLight].x_angle += 10.0;
+            break;
+        case GLFW_KEY_S: // Light down
+            m_light[m_selectedLight].x_angle -= 10.0;
+            break;
+        case GLFW_KEY_A: // Light clockwse
+            m_light[m_selectedLight].y_angle -= 10.0;
+            break;
+        case GLFW_KEY_D: // Light counterclockwise
+            m_light[m_selectedLight].y_angle += 10.0;
+            break;
 
-            // Misc controls
-            case GLFW_KEY_P: // Print screen (dump screenshots)
-                m_screenshotRequested = true;
-                break;
+        // Misc controls
+        case GLFW_KEY_P: // Print screen (dump screenshots)
+            m_screenshotRequested = true;
+            break;
 
-            case GLFW_KEY_J: // Shader hot-reload
-                m_phong_shader.reload();
-                m_solid_color_shader.reload();
-                m_shadowmap_gen_shader.reload();
-                break;
+        case GLFW_KEY_J: // Shader hot-reload
+            m_phong_shader.reload();
+            m_solid_color_shader.reload();
+            m_shadowmap_gen_shader.reload();
+            break;
         }
     }
 }
