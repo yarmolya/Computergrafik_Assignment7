@@ -54,10 +54,11 @@ void main()
     vec3 L = normalize(light_ray);
     vec3 V = normalize (v2f_view);
     vec3 R = reflect(-L,N);
-    
-    float shadowMapDist = texture(shadow_map, L).r;
+
+    vec3 fragment_to_light = v2f_ec_vertex - light_position;
+    float shadowMapDist = texture(shadow_map, fragment_to_light).r;
     float fragDist = length(light_ray);
-    
+
     float offset = 1.01; //prevents shadow acne
     bool isShadowed = fragDist > shadowMapDist * offset;
 
@@ -80,5 +81,5 @@ void main()
 
     // append the required alpha value
     f_light_contribution = vec4(color, 1.0);
-  
+
 }
