@@ -157,22 +157,33 @@ void angleWeights(const vec3 &p0, const vec3 &p1, const vec3 &p2,
 
 void Mesh::compute_normals()
 {
-    // compute triangle normals
-    for (Triangle& t: triangles_)
+    for (Vertex& v : vertices_)
+    {
+        v.normal = vec3(0, 0, 0);
+    }
+
+    // compute triangle normals and weights, compute vertices normals
+    for (Triangle& t : triangles_)
     {
         const vec3& p0 = vertices_[t.i0].position;
         const vec3& p1 = vertices_[t.i1].position;
         const vec3& p2 = vertices_[t.i2].position;
-        t.normal = normalize(cross(p1-p0, p2-p0));
+        t.normal = normalize(cross(p1 - p0, p2 - p0));
+
+        std::array<double, 3> weights;
+        angleWeights(p0, p1, p2, weights[0], weights[1], weights[2]);
+
+        vertices_[t.i0].normal += t.normal * weights[0];
+        vertices_[t.i1].normal += t.normal * weights[1];
+        vertices_[t.i2].normal += t.normal * weights[2];
+
     }
 
-    // initialize vertex normals to zero
-    for (Vertex& v: vertices_)
+    // normalize normals
+    for (Vertex& v : vertices_)
     {
-        v.normal = vec3(0,0,0);
+        v.normal = normalize(v.normal);
     }
-
-    // \todo Paste your assignment 3 vertex normal computation solution here.
 }
 
 

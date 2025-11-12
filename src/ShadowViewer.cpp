@@ -80,11 +80,9 @@ mat4 ShadowViewer::m_constructLightViewMatrix(size_t li, size_t cube_face) const
 
     // center is light position + direction
     vec3 center = light_pos_eye + direction;
-
+    
     mat4 look_eye = mat4::look_at(light_pos_eye, center, up);
-
     return look_eye * scene_view_matrix;
-
 }
 
 mat4 ShadowViewer::m_constructLightProjectionMatrix() const {
@@ -158,8 +156,8 @@ void ShadowViewer::draw(const mat4 &view_matrix, const mat4 &projection_matrix) 
 
     // \todo Construct the matrices for transforming normals into eye coordinates
     //       You can paste in your solution from assignment 6.
-    mat3 plane_n_matrix   = mat4::identity();
-    mat3 mesh_n_matrix    = mat4::identity();
+    mat3 plane_n_matrix = transpose(inverse(plane_mv_matrix));
+    mat3 mesh_n_matrix  = transpose(inverse(mesh_mv_matrix));
 
     vec3 ambient_light(0.2, 0.2, 0.2),
         plane_diffuse (0.5, 0.5, 0.7), // used as ambient color too
@@ -172,7 +170,7 @@ void ShadowViewer::draw(const mat4 &view_matrix, const mat4 &projection_matrix) 
     m_solid_color_shader.set_uniform("color", ambient_light * plane_diffuse);
     m_solid_color_shader.set_uniform("modelview_projection_matrix", plane_mvp_matrix);
     m_quad.draw();
-
+    
     m_solid_color_shader.use();
     m_solid_color_shader.set_uniform("color", ambient_light * mesh_diffuse);
     m_solid_color_shader.set_uniform("modelview_projection_matrix", mesh_mvp_matrix);
@@ -187,12 +185,14 @@ void ShadowViewer::draw(const mat4 &view_matrix, const mat4 &projection_matrix) 
         * output by our shader to the colors already in the framebuffer.
         * Hint: read the documentation for glBlendFunc
         **/
+        glEnable(GL_BLEND);
+        glBlendFunc(GL_ONE, GL_ONE);
 
         m_phong_shader.use();
         m_shadowMap->bind();
 
-        m_phong_shader.set_uniform("shininess", 8.0f, true); // pass 'optional = true' to avoid 'Invalid uniform location'
-        m_phong_shader.set_uniform("shadow_map",   0, true); // warnings caused by incomplete shader implementations
+        m_phong_shader.set_uniform("shininess", 8.0f); // pass 'optional = true' to avoid 'Invalid uniform location'
+        m_phong_shader.set_uniform("shadow_map",   0); // warnings caused by incomplete shader implementation
 
         /** \todo
          * Draw this light's specular and diffuse contribution on the floor
@@ -200,10 +200,43 @@ void ShadowViewer::draw(const mat4 &view_matrix, const mat4 &projection_matrix) 
          * You'll need to pass in the light position ***in eye coordinates** as
          * well as the proper material and transformation matrices.
          **/
+
+        //calculate light position in eye coordinates
+        vec3 light_pos_from_eye =  view_matrix * m_light[li].position();
+
+        //render m_quad
+        //set vert uniforms
+        m_phong_shader.set_uniform("modelview_matrix", plane_mv_matrix);
+        m_phong_shader.set_uniform("modelview_projection_matrix", plane_mvp_matrix);
+        m_phong_shader.set_uniform("normal_matrix", plane_n_matrix);
+
+        //set fragment uniforms
+        m_phong_shader.set_uniform("light_position", light_pos_from_eye);
+        m_phong_shader.set_uniform("light_color", m_light[li].color);
+        m_phong_shader.set_uniform("specular_color", plane_specular);
+        m_phong_shader.set_uniform("diffuse_color", plane_diffuse);
+        
+        m_quad.draw();
+
+        //render m_mesh
+        //set vert uniforms
+        m_phong_shader.set_uniform("modelview_matrix", mesh_mv_matrix);
+        m_phong_shader.set_uniform("modelview_projection_matrix", mesh_mvp_matrix);
+        m_phong_shader.set_uniform("normal_matrix", mesh_n_matrix);
+
+        //set fragment uniforms
+        m_phong_shader.set_uniform("light_position", light_pos_from_eye);
+        m_phong_shader.set_uniform("light_color", m_light[li].color);
+        m_phong_shader.set_uniform("specular_color", mesh_specular);
+        m_phong_shader.set_uniform("diffuse_color", mesh_diffuse);
+
+        m_mesh->draw();
+
         m_shadowMap->unbind();
 
         // All other shaders should overwrite the framebuffer color, not add to it...
         glDisable(GL_BLEND);
+        glCheckError();
     }
 
     // Draw the lights with solid color spheres

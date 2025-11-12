@@ -14,7 +14,7 @@ uniform vec3 light_position; // Eye-space light position
 uniform vec3 light_color;
 
 // Material parameters
-uniform vec3  diffuse_color;
+uniform vec3 diffuse_color;
 uniform vec3 specular_color;
 uniform float shininess;
 
@@ -24,7 +24,8 @@ out vec4 f_light_contribution;
 
 void main()
 {
-    vec3 color = vec3(0.0f);
+    //vec3 color = vec3(0.0f);
+    vec3 color = light_color;
     // Orient the normal so it always points opposite the camera rays:
     vec3 N = -sign(dot(v2f_normal, v2f_ec_vertex)) *
              normalize(v2f_normal);
@@ -45,7 +46,39 @@ void main()
     * instead of additive tolerance: compare the fragment's distance to 1.01x the
     * distance from the shadow map.
     ***/
+    vec3 light_ray = light_position - v2f_ec_vertex;
+
+    //camera position is at origin! therefore v is vector from fragment position to origin
+    vec3 v2f_view = -(v2f_ec_vertex);
+
+    vec3 L = normalize(light_ray);
+    vec3 V = normalize (v2f_view);
+    vec3 R = reflect(-L,N);
+    
+    float shadowMapDist = texture(shadow_map, L).r;
+    float fragDist = length(light_ray);
+    
+    float offset = 1.01; //prevents shadow acne
+    bool isShadowed = fragDist > shadowMapDist * offset;
+
+    // diffuse and specular component
+    vec3 diffuse = vec3(0.0);
+    vec3 specular = vec3(0.0);
+    float cos_theta = dot(N,L);
+
+    if (!isShadowed) {
+        if (cos_theta > 0) {
+        diffuse = light_color * diffuse_color * cos_theta;
+        float cos_alpha = dot(R,V);
+        if (cos_alpha > 0) {
+            specular = light_color * specular_color * pow(cos_alpha,shininess);
+            }
+        }
+    }
+
+    color = diffuse + specular;
 
     // append the required alpha value
     f_light_contribution = vec4(color, 1.0);
+  
 }
